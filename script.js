@@ -1,106 +1,229 @@
-// Recipe data - Foundation for all 4 parts
+// ----------------------------
+// Recipe Data
+// ----------------------------
 const recipes = [
-    {
-        id: 1,
-        title: "Classic Spaghetti Carbonara",
-        time: 25,
-        difficulty: "easy",
-        description: "A creamy Italian pasta dish made with eggs, cheese, pancetta, and black pepper.",
-        category: "pasta"
-    },
-    {
-        id: 2,
-        title: "Chicken Tikka Masala",
-        time: 45,
-        difficulty: "medium",
-        description: "Tender chicken pieces in a creamy, spiced tomato sauce.",
-        category: "curry"
-    },
-    {
-        id: 3,
-        title: "Homemade Croissants",
-        time: 180,
-        difficulty: "hard",
-        description: "Buttery, flaky French pastries that require patience but deliver amazing results.",
-        category: "baking"
-    },
-    {
-        id: 4,
-        title: "Greek Salad",
-        time: 15,
-        difficulty: "easy",
-        description: "Fresh vegetables, feta cheese, and olives tossed in olive oil and herbs.",
-        category: "salad"
-    },
-    {
-        id: 5,
-        title: "Beef Wellington",
-        time: 120,
-        difficulty: "hard",
-        description: "Tender beef fillet coated with mushroom duxelles and wrapped in puff pastry.",
-        category: "meat"
-    },
-    {
-        id: 6,
-        title: "Vegetable Stir Fry",
-        time: 20,
-        difficulty: "easy",
-        description: "Colorful mixed vegetables cooked quickly in a savory sauce.",
-        category: "vegetarian"
-    },
-    {
-        id: 7,
-        title: "Pad Thai",
-        time: 30,
-        difficulty: "medium",
-        description: "Thai stir-fried rice noodles with shrimp, peanuts, and tangy tamarind sauce.",
-        category: "noodles"
-    },
-    {
-        id: 8,
-        title: "Margherita Pizza",
-        time: 60,
-        difficulty: "medium",
-        description: "Classic Italian pizza with fresh mozzarella, tomatoes, and basil.",
-        category: "pizza"
-    }
+{
+title:"Spaghetti Carbonara",
+difficulty:"medium",
+time:25,
+description:"Classic Italian pasta with eggs, cheese and bacon"
+},
+{
+title:"Grilled Cheese Sandwich",
+difficulty:"easy",
+time:10,
+description:"Simple toasted sandwich with melted cheese"
+},
+{
+title:"Chicken Curry",
+difficulty:"hard",
+time:60,
+description:"Spicy chicken curry with rich gravy"
+},
+{
+title:"Pancakes",
+difficulty:"easy",
+time:20,
+description:"Fluffy breakfast pancakes with syrup"
+},
+{
+title:"Vegetable Stir Fry",
+difficulty:"easy",
+time:15,
+description:"Quick healthy veggies stir fried with sauce"
+},
+{
+title:"Beef Steak",
+difficulty:"hard",
+time:45,
+description:"Juicy grilled steak with seasoning"
+},
+{
+title:"Caesar Salad",
+difficulty:"easy",
+time:15,
+description:"Fresh salad with lettuce and dressing"
+},
+{
+title:"Lasagna",
+difficulty:"medium",
+time:50,
+description:"Layered pasta with cheese and meat sauce"
+}
 ];
 
-// DOM Selection - Get the container where recipes will be displayed
-const recipeContainer = document.querySelector('#recipe-container');
+// ----------------------------
+// State Management
+// ----------------------------
+let currentFilter = "all";
+let currentSort = "none";
 
-console.log(recipeContainer);
+const recipeContainer = document.getElementById("recipe-container");
+const filterButtons = document.querySelectorAll("[data-filter]");
+const sortButtons = document.querySelectorAll("[data-sort]");
 
-// Function to create HTML for a single recipe card
-const createRecipeCard = (recipe) => {
-    return `
-        <div class="recipe-card" data-id="${recipe.id}">
-            <h3>${recipe.title}</h3>
-            <div class="recipe-meta">
-                <span>⏱️ ${recipe.time} min</span>
-                <span class="difficulty ${recipe.difficulty}">${recipe.difficulty}</span>
-            </div>
-            <p>${recipe.description}</p>
-        </div>
-    `;
+// ----------------------------
+// Render Recipes
+// ----------------------------
+function renderRecipes(recipesArray){
+
+recipeContainer.innerHTML = "";
+
+recipesArray.forEach(recipe=>{
+
+const card=document.createElement("div");
+card.className="recipe-card";
+
+card.innerHTML=`
+<h3>${recipe.title}</h3>
+<div class="recipe-meta">
+Difficulty: ${recipe.difficulty} | Time: ${recipe.time} mins
+</div>
+<p class="recipe-desc">${recipe.description}</p>
+`;
+
+recipeContainer.appendChild(card);
+
+});
+
+}
+
+// ----------------------------
+// Filter Functions (PURE)
+// ----------------------------
+const filterByDifficulty = (recipes,difficulty)=>{
+return recipes.filter(recipe=>recipe.difficulty===difficulty);
 };
 
-console.log(createRecipeCard(recipes[0]));
-
-// Function to render recipes to the DOM
-const renderRecipes = (recipesToRender) => {
-
-    const recipeCardsHTML = recipesToRender
-        .map(createRecipeCard)
-        .join('');
-
-    recipeContainer.innerHTML = recipeCardsHTML;
+const filterByTime = (recipes,time)=>{
+return recipes.filter(recipe=>recipe.time<time);
 };
 
-// Initialize: Render all recipes when page loads
-renderRecipes(recipes);
+function applyFilter(recipesArray,filterType){
 
-// Helpful logs
-console.log('Total recipes:', recipes.length);
-console.log('First recipe:', recipes[0]);
-console.log('Rendering complete!');
+switch(filterType){
+
+case "easy":
+case "medium":
+case "hard":
+return filterByDifficulty(recipesArray,filterType);
+
+case "quick":
+return filterByTime(recipesArray,30);
+
+default:
+return recipesArray;
+
+}
+
+}
+
+// ----------------------------
+// Sort Functions (PURE)
+// ----------------------------
+const sortByName = (recipes)=>{
+return [...recipes].sort((a,b)=>a.title.localeCompare(b.title));
+};
+
+const sortByTime = (recipes)=>{
+return [...recipes].sort((a,b)=>a.time-b.time);
+};
+
+function applySort(recipesArray,sortType){
+
+switch(sortType){
+
+case "name":
+return sortByName(recipesArray);
+
+case "time":
+return sortByTime(recipesArray);
+
+default:
+return recipesArray;
+
+}
+
+}
+
+// ----------------------------
+// Update Display
+// ----------------------------
+function updateDisplay(){
+
+let recipesToDisplay=[...recipes];
+
+recipesToDisplay=applyFilter(recipesToDisplay,currentFilter);
+
+recipesToDisplay=applySort(recipesToDisplay,currentSort);
+
+renderRecipes(recipesToDisplay);
+
+console.log(`Displaying ${recipesToDisplay.length} recipes (Filter: ${currentFilter}, Sort: ${currentSort})`);
+
+}
+
+// ----------------------------
+// Update Active Buttons
+// ----------------------------
+function updateActiveButtons(){
+
+filterButtons.forEach(btn=>{
+btn.classList.remove("active");
+if(btn.dataset.filter===currentFilter){
+btn.classList.add("active");
+}
+});
+
+sortButtons.forEach(btn=>{
+btn.classList.remove("active");
+if(btn.dataset.sort===currentSort){
+btn.classList.add("active");
+}
+});
+
+}
+
+// ----------------------------
+// Event Handlers
+// ----------------------------
+function handleFilterClick(e){
+
+currentFilter=e.target.dataset.filter;
+
+updateActiveButtons();
+
+updateDisplay();
+
+}
+
+function handleSortClick(e){
+
+currentSort=e.target.dataset.sort;
+
+updateActiveButtons();
+
+updateDisplay();
+
+}
+
+// ----------------------------
+// Setup Event Listeners
+// ----------------------------
+function setupEventListeners(){
+
+filterButtons.forEach(btn=>{
+btn.addEventListener("click",handleFilterClick);
+});
+
+sortButtons.forEach(btn=>{
+btn.addEventListener("click",handleSortClick);
+});
+
+}
+
+// ----------------------------
+// Initialization
+// ----------------------------
+setupEventListeners();
+updateDisplay();
