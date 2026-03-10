@@ -1,37 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RecipeJS</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecipeJS</title>
+
+    <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<h1>RecipeJS 🍳 Functional Cooking Companion</h1>
+    <h1>🍳 RecipeJS - Functional Cooking Companion</h1>
 
-<div class="controls">
+    <div class="controls">
 
-<div class="filter-buttons">
-<button data-filter="all" class="active">Show All</button>
-<button data-filter="easy">Easy</button>
-<button data-filter="medium">Medium</button>
-<button data-filter="hard">Hard</button>
-<button data-filter="quick">Quick Recipes</button>
-</div>
+        <div class="filters">
+            <button data-filter="all" class="active">Show All</button>
+            <button data-filter="easy">Easy</button>
+            <button data-filter="medium">Medium</button>
+            <button data-filter="hard">Hard</button>
+            <button data-filter="quick">Quick Recipes</button>
+        </div>
 
-<div class="sort-buttons">
-<button data-sort="none" class="active">Default</button>
-<button data-sort="name">Name (A-Z)</button>
-<button data-sort="time">Time (Fastest)</button>
-</div>
+        <div class="sorts">
+            <button data-sort="none" class="active">Default</button>
+            <button data-sort="name">Name A-Z</button>
+            <button data-sort="time">Fastest First</button>
+        </div>
 
-</div>
+    </div>
 
-<div id="recipe-container"></div>
+    <div id="recipe-container"></div>
 
-<script src="app.js"></script>
+    <script src="app.js"></script>
 
 </body>
+
 </html>
