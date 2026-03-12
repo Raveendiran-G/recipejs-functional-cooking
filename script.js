@@ -14,7 +14,6 @@ const RecipeApp = (function () {
             difficulty: "medium",
             time: 25,
             ingredients: ["Pasta", "Eggs", "Parmesan", "Bacon", "Pepper"],
-
             steps: [
                 "Boil pasta",
                 {
@@ -41,9 +40,7 @@ const RecipeApp = (function () {
             title: "Grilled Cheese Sandwich",
             difficulty: "easy",
             time: 10,
-
             ingredients: ["Bread", "Butter", "Cheese"],
-
             steps: [
                 "Butter bread",
                 "Place cheese between slices",
@@ -56,9 +53,7 @@ const RecipeApp = (function () {
             title: "Chicken Curry",
             difficulty: "hard",
             time: 60,
-
             ingredients: ["Chicken", "Onion", "Tomato", "Spices", "Garlic"],
-
             steps: [
                 "Marinate chicken",
                 "Cook onions",
@@ -74,7 +69,6 @@ const RecipeApp = (function () {
             difficulty: "easy",
             time: 20,
             ingredients: ["Flour", "Milk", "Eggs", "Sugar", "Butter"],
-
             steps: [
                 "Mix ingredients",
                 "Heat pan",
@@ -90,7 +84,6 @@ const RecipeApp = (function () {
             difficulty: "easy",
             time: 15,
             ingredients: ["Carrots", "Broccoli", "Soy sauce", "Garlic"],
-
             steps: [
                 "Chop vegetables",
                 "Heat oil",
@@ -105,7 +98,6 @@ const RecipeApp = (function () {
             difficulty: "hard",
             time: 45,
             ingredients: ["Beef", "Salt", "Pepper", "Butter"],
-
             steps: [
                 "Season steak",
                 "Heat pan",
@@ -121,7 +113,6 @@ const RecipeApp = (function () {
             difficulty: "easy",
             time: 15,
             ingredients: ["Lettuce", "Croutons", "Parmesan", "Dressing"],
-
             steps: [
                 "Wash lettuce",
                 "Toss ingredients",
@@ -135,7 +126,6 @@ const RecipeApp = (function () {
             difficulty: "medium",
             time: 50,
             ingredients: ["Lasagna sheets", "Tomato sauce", "Cheese", "Beef"],
-
             steps: [
                 "Cook meat",
                 "Prepare sauce",
@@ -152,10 +142,21 @@ const RecipeApp = (function () {
 
     let currentFilter = "all"
     let currentSort = "none"
+    let searchQuery = ""
+    let favorites = JSON.parse(localStorage.getItem("recipeFavorites")) || []
+    let debounceTimer
+
+    // --------------------
+    // DOM
+    // --------------------
 
     const recipeContainer = document.getElementById("recipe-container")
     const filterButtons = document.querySelectorAll("[data-filter]")
     const sortButtons = document.querySelectorAll("[data-sort]")
+
+    const searchInput = document.getElementById("search-input")
+    const clearSearchBtn = document.getElementById("clear-search")
+    const recipeCountDisplay = document.getElementById("recipe-count")
 
     // --------------------
     // RECURSIVE STEPS
@@ -165,7 +166,7 @@ const RecipeApp = (function () {
 
         let html = ""
 
-        steps.forEach((step, index) => {
+        steps.forEach(step => {
 
             if (typeof step === "string") {
 
@@ -186,18 +187,9 @@ const RecipeApp = (function () {
         })
 
         return html
-
     }
 
-    const createStepsHTML = (steps) => {
-
-        return `
-<ul>
-${renderSteps(steps)}
-</ul>
-`
-
-    }
+    const createStepsHTML = (steps) => `<ul>${renderSteps(steps)}</ul>`
 
     // --------------------
     // CARD
@@ -205,9 +197,15 @@ ${renderSteps(steps)}
 
     const createRecipeCard = (recipe) => {
 
+        const isFav = favorites.includes(recipe.id)
+
         return `
 
 <div class="recipe-card">
+
+<button class="favorite-btn" data-id="${recipe.id}">
+${isFav ? "❤️" : "🤍"}
+</button>
 
 <h3>${recipe.title}</h3>
 
@@ -234,24 +232,47 @@ ${createStepsHTML(recipe.steps)}
 </div>
 
 </div>
-
 `
-
     }
 
     // --------------------
     // RENDER
     // --------------------
 
-    const renderRecipes = (recipes) => {
+    const renderRecipes = (list) => {
+        recipeContainer.innerHTML = list.map(createRecipeCard).join("")
+    }
 
-        recipeContainer.innerHTML = recipes.map(createRecipeCard).join("")
+    // --------------------
+    // SEARCH
+    // --------------------
 
+    const filterBySearch = (recipes, query) => {
+
+        if (!query) return recipes
+
+        const q = query.toLowerCase()
+
+        return recipes.filter(recipe => {
+
+            const titleMatch = recipe.title.toLowerCase().includes(q)
+
+            const ingredientMatch = recipe.ingredients.some(i =>
+                i.toLowerCase().includes(q)
+            )
+
+            return titleMatch || ingredientMatch
+
+        })
     }
 
     // --------------------
     // FILTER
     // --------------------
+
+    const filterFavorites = (recipes) => {
+        return recipes.filter(r => favorites.includes(r.id))
+    }
 
     const applyFilter = (recipes, filter) => {
 
@@ -265,11 +286,12 @@ ${createStepsHTML(recipe.steps)}
             case "quick":
                 return recipes.filter(r => r.time < 30)
 
+            case "favorites":
+                return filterFavorites(recipes)
+
             default:
                 return recipes
-
         }
-
     }
 
     // --------------------
@@ -290,25 +312,57 @@ ${createStepsHTML(recipe.steps)}
 
             default:
                 return recipes
-
         }
-
     }
 
     // --------------------
-    // UPDATE DISPLAY
+    // COUNTER
+    // --------------------
+
+    const updateRecipeCounter = (showing, total) => {
+        if (recipeCountDisplay) {
+            recipeCountDisplay.textContent = `Showing ${showing} of ${total} recipes`
+        }
+    }
+
+    // --------------------
+    // DISPLAY
     // --------------------
 
     const updateDisplay = () => {
 
         let result = [...recipes]
 
+        result = filterBySearch(result, searchQuery)
         result = applyFilter(result, currentFilter)
-
         result = applySort(result, currentSort)
+
+        updateRecipeCounter(result.length, recipes.length)
 
         renderRecipes(result)
 
+    }
+
+    // --------------------
+    // FAVORITES
+    // --------------------
+
+    const saveFavorites = () => {
+        localStorage.setItem("recipeFavorites", JSON.stringify(favorites))
+    }
+
+    const toggleFavorite = (id) => {
+
+        const recipeId = parseInt(id)
+
+        if (favorites.includes(recipeId)) {
+            favorites = favorites.filter(f => f !== recipeId)
+        } else {
+            favorites.push(recipeId)
+        }
+
+        saveFavorites()
+        updateDisplay()
     }
 
     // --------------------
@@ -328,9 +382,46 @@ ${createStepsHTML(recipe.steps)}
 
         e.target.textContent =
             container.classList.contains("visible")
-                ? `Hide ${toggleType.charAt(0).toUpperCase() + toggleType.slice(1)}`
-                : `Show ${toggleType.charAt(0).toUpperCase() + toggleType.slice(1)}`
+                ? `Hide ${toggleType}`
+                : `Show ${toggleType}`
+    }
 
+    // --------------------
+    // FAVORITE CLICK
+    // --------------------
+
+    const handleFavoriteClick = (e) => {
+
+        if (!e.target.classList.contains("favorite-btn")) return
+
+        toggleFavorite(e.target.dataset.id)
+    }
+
+    // --------------------
+    // SEARCH
+    // --------------------
+
+    const handleSearchInput = (e) => {
+
+        const query = e.target.value
+
+        clearTimeout(debounceTimer)
+
+        debounceTimer = setTimeout(() => {
+            searchQuery = query
+            updateDisplay()
+        }, 300)
+
+        clearSearchBtn.style.display = query ? "block" : "none"
+    }
+
+    const handleClearSearch = () => {
+
+        searchInput.value = ""
+        searchQuery = ""
+        clearSearchBtn.style.display = "none"
+
+        updateDisplay()
     }
 
     // --------------------
@@ -355,8 +446,13 @@ ${createStepsHTML(recipe.steps)}
 
         recipeContainer.addEventListener("click", handleToggleClick)
 
-        console.log("Event listeners attached!")
+        recipeContainer.addEventListener("click", handleFavoriteClick)
 
+        searchInput.addEventListener("input", handleSearchInput)
+
+        clearSearchBtn.addEventListener("click", handleClearSearch)
+
+        console.log("Event listeners attached!")
     }
 
     // --------------------
